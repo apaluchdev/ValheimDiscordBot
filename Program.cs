@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 using ValheimDiscordBot.Interfaces;
+using System.Diagnostics;
 
 namespace ValheimDiscordBot
 {
@@ -11,6 +12,8 @@ namespace ValheimDiscordBot
     {
         static async Task Main(string[] args)
         {
+            Debug.WriteLine("Starting Discord Bot...");
+
             var configuration = new ConfigurationBuilder()
                 .AddUserSecrets(Assembly.GetExecutingAssembly())
                 .Build();
@@ -27,18 +30,11 @@ namespace ValheimDiscordBot
 
                 await discordBot.StartAsync(serviceProvider);
                 Console.WriteLine("Connected to Discord");
+                Debug.WriteLine("Connected to Discord");
 
                 do
                 {
-                    var keyInfo = Console.ReadKey();
-
-                    if (keyInfo.Key == ConsoleKey.Q)
-                    {
-                        Console.WriteLine("\nShutting down!");
-
-                        await discordBot.StopAsync();
-                        return;
-                    }
+                  await Task.Delay(5000);
                 } while (true);
             }
             catch (Exception exception)

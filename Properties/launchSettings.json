@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "ValheimDiscordBot": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker",
+      "environmentVariables": {
+      }
+    }
+  }
+}
