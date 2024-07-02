@@ -5,17 +5,29 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using ValheimDiscordBot.Interfaces;
 
 namespace ValheimDiscordBot
 {
+    public class ValheimLog
+    {
+        public string? Content { get; set; }
+    }
+
     internal class DiscordBot : IDiscordBot
     {
+        private static System.Timers.Timer playerStatusTimer;
+        private static readonly HttpClient client = new HttpClient();
         private ServiceProvider? _serviceProvider;
+        private readonly string _apiUrl = "http://valheim.apaluchdev.com:9001/readfile";
+        private string _lastStartTime = null;
+        private int _playerCount = 0;
 
         private readonly IConfiguration _configuration;
         private readonly ILogger _logger;
@@ -48,10 +60,69 @@ namespace ValheimDiscordBot
             await _client.LoginAsync(TokenType.Bot, discordToken);
             await _client.StartAsync();
 
-            var playerCount = 2;
-            await _client.SetCustomStatusAsync($"Valheim players {playerCount}/10");
+            playerStatusTimer = new System.Timers.Timer(60000);
+
+            // Subscribe to the Elapsed event
+            playerStatusTimer.Elapsed += PlayerStatusTimer_Elapsed;
+
+            // AutoReset set to true means the timer will reset after each elapsed event
+            playerStatusTimer.AutoReset = true;
+
+            // Start the timer
+            playerStatusTimer.Enabled = true;
 
             _client.MessageReceived += HandleCommandAsync;
+        }
+
+        private async void PlayerStatusTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
+        {
+            if (_client == null) return;
+
+            await SetPlayerCount();
+        }
+
+        private async Task SetPlayerCount()
+        {
+            try
+            {
+                // Send a GET request to the API endpoint
+                HttpResponseMessage response = await client.GetAsync(_apiUrl);
+
+                // Ensure the request was successful
+                response.EnsureSuccessStatusCode();
+
+                // Read the response content as a string
+                string responseBody = await response.Content.ReadAsStringAsync();
+
+                // Deserialize the JSON string into a C# object
+                ValheimLog apiResponse = JsonSerializer.Deserialize<ValheimLog>(responseBody ?? "", new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new ValheimLog();
+
+                if (apiResponse.Content == null) return;
+
+                var lines = apiResponse.Content.Split('\n');
+
+                var joinLines = lines.Where(l => l.Contains("Got connection SteamID"));
+                var exitLines = lines.Where(l => l.Contains("Closing socket"));
+
+                var lastStartTime = lines.LastOrDefault(l => l.Contains("Game server connected")).Split(' ')[3];
+
+                if (_lastStartTime != lastStartTime)
+                {
+                    _playerCount = 0;
+                }
+
+                _playerCount += joinLines.Count();
+                _playerCount -= exitLines.Count();
+
+                await _client.SetCustomStatusAsync($"Players online: {_playerCount}/10");
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
         }
 
         public async Task StopAsync()
