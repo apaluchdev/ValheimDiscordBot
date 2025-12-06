@@ -1,11 +1,8 @@
-﻿
-using Microsoft.Extensions.DependencyInjection;
-
-namespace ValheimDiscordBot.Interfaces
+﻿namespace ValheimDiscordBot.Interfaces
 {
     internal interface IDiscordBot
     {
-        Task StartAsync(ServiceProvider serviceProvider);
+        Task StartAsync();
 
         Task StopAsync();
     }

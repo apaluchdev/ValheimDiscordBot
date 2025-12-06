@@ -4,9 +4,10 @@ namespace ValheimDiscordBot
 {
     internal class ConsoleLogger : ILogger
     {
-        public async Task Log(string message)
+        public Task Log(string message)
         {
-            Console.WriteLine($"{DateTime.Now.ToShortTimeString} - {message}");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss} - {message}");
+            return Task.CompletedTask;
         }
     }
 }

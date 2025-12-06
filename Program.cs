@@ -15,32 +15,56 @@ namespace ValheimDiscordBot
             Debug.WriteLine("Starting Discord Bot...");
 
             var configuration = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddUserSecrets(Assembly.GetExecutingAssembly())
                 .Build();
 
             var serviceProvider = new ServiceCollection()
                 .AddSingleton<IConfiguration>(configuration)
-                .AddScoped<IDiscordBot, DiscordBot>()
+                .AddSingleton<IDiscordBot, DiscordBot>()
                 .AddSingleton<ILogger, ConsoleLogger>()
                 .BuildServiceProvider();
 
+            using var cancellationTokenSource = new CancellationTokenSource();
+            
+            Console.CancelKeyPress += (sender, e) =>
+            {
+                e.Cancel = true;
+                cancellationTokenSource.Cancel();
+            };
+
             try
             {
-                IDiscordBot discordBot = serviceProvider.GetRequiredService<IDiscordBot>();
+                var logger = serviceProvider.GetRequiredService<ILogger>();
+                await logger.Log("Starting Discord Bot...");
 
-                await discordBot.StartAsync(serviceProvider);
-                Console.WriteLine("Connected to Discord");
-                Debug.WriteLine("Connected to Discord");
+                var discordBot = serviceProvider.GetRequiredService<IDiscordBot>();
 
-                do
-                {
-                  await Task.Delay(5000);
-                } while (true);
+                await discordBot.StartAsync();
+                await logger.Log("Connected to Discord");
+
+                await Task.Delay(Timeout.Infinite, cancellationTokenSource.Token);
+            }
+            catch (TaskCanceledException)
+            {
+                Console.WriteLine("Shutting down gracefully...");
             }
             catch (Exception exception)
             {
-                Console.WriteLine(exception.Message);
+                Console.WriteLine($"Fatal error: {exception.Message}");
                 Environment.Exit(-1);
+            }
+            finally
+            {
+                var discordBot = serviceProvider.GetRequiredService<IDiscordBot>();
+                await discordBot.StopAsync();
+
+                if (discordBot is IDisposable disposable)
+                {
+                    disposable.Dispose();
+                }
+
+                await serviceProvider.DisposeAsync();
             }
         }
     }
