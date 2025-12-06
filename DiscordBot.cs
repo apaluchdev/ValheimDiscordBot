@@ -3,8 +3,6 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using SteamQuery;
-using SteamQueryNet;
-using SteamQueryNet.Models;
 using System.Reflection;
 using ValheimDiscordBot.Interfaces;
 
