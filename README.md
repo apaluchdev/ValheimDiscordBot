@@ -54,49 +54,7 @@ You can also configure the bot using `appsettings.json`:
 - Docker installed on your system
 - A Discord bot token ([Create one here](https://discord.com/developers/applications))
 
-### Option 1: Using Docker Compose (Recommended)
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/apaluchdev/ValheimDiscordBot.git
-   cd ValheimDiscordBot
-   ```
-
-2. **Create environment file**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Edit `.env` file with your configuration**
-   ```env
-   # Discord Bot Token (Required)
-   DISCORD_TOKEN=your_discord_bot_token_here
-
-   # Valheim Server Configuration (Required)
-   VALHEIM_SERVER_HOST=your-server.com
-   VALHEIM_SERVER_PORT=2457
-
-   # Bot Configuration (Optional - defaults shown)
-   STATUS_UPDATE_INTERVAL=60
-   COMMAND_PREFIX=/
-   ```
-
-4. **Start the bot**
-   ```bash
-   docker-compose up -d
-   ```
-
-5. **View logs**
-   ```bash
-   docker-compose logs -f valheim-discord-bot
-   ```
-
-6. **Stop the bot**
-   ```bash
-   docker-compose down
-   ```
-
-### Option 2: Using Docker CLI
+### Running with Docker
 
 1. **Build the Docker image**
    ```bash
@@ -127,7 +85,7 @@ You can also configure the bot using `appsettings.json`:
    docker rm valheim-discord-bot
    ```
 
-### Option 3: Using Pre-built Image (If available on Docker Hub)
+### Using Pre-built Image (If available on Docker Hub)
 
 ```bash
 docker run -d \
@@ -136,7 +94,7 @@ docker run -d \
   -e DiscordToken="YOUR_DISCORD_TOKEN" \
   -e ValheimServer__Host="your-server.com" \
   -e ValheimServer__QueryPort="2457" \
-  apaluchdev/valheim-discord-bot:latest
+  apaluch/valheim-discord-bot:latest
 ```
 
 ## Running Locally (Without Docker)
@@ -186,37 +144,38 @@ docker ps -a
 
 ### View Logs
 ```bash
-# Docker Compose
-docker-compose logs -f
-
-# Docker CLI
 docker logs -f valheim-discord-bot
 ```
 
 ### Restart the Bot
 ```bash
-# Docker Compose
-docker-compose restart
-
-# Docker CLI
 docker restart valheim-discord-bot
 ```
 
 ### Update to Latest Version
 ```bash
-# Stop the current container
-docker-compose down
+# Stop and remove the current container
+docker stop valheim-discord-bot
+docker rm valheim-discord-bot
 
 # Pull latest changes
 git pull
 
 # Rebuild and start
-docker-compose up -d --build
+docker build -t valheim-discord-bot .
+docker run -d \
+  --name valheim-discord-bot \
+  --restart unless-stopped \
+  -e DiscordToken="YOUR_DISCORD_TOKEN" \
+  -e ValheimServer__Host="your-server.com" \
+  -e ValheimServer__QueryPort="2457" \
+  valheim-discord-bot
 ```
 
 ### Remove Everything (Clean Slate)
 ```bash
-docker-compose down
+docker stop valheim-discord-bot
+docker rm valheim-discord-bot
 docker rmi valheim-discord-bot
 ```
 
@@ -224,7 +183,7 @@ docker rmi valheim-discord-bot
 
 ### Bot won't connect to Discord
 - Verify your `DISCORD_TOKEN` is correct
-- Check logs: `docker-compose logs -f`
+- Check logs: `docker logs -f valheim-discord-bot`
 - Ensure the bot has proper permissions in your Discord server
 
 ### Can't connect to Valheim server
@@ -239,7 +198,6 @@ docker rmi valheim-discord-bot
 - Ensure the Discord token is valid
 
 ### Environment variables not working
-- In `.env` file, use format: `KEY=value` (no quotes needed)
 - In docker run, use format: `-e KEY="value"` (quotes recommended)
 - Variables use double underscore `__` for nested config: `ValheimServer__Host`
 
