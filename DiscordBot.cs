@@ -2,6 +2,7 @@
 using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
+using SteamQuery;
 using SteamQueryNet;
 using SteamQueryNet.Models;
 using System.Reflection;
@@ -77,14 +78,26 @@ namespace ValheimDiscordBot
                 string serverHost = _configuration["ValheimServer:Host"] ?? "apaluchdev.com";
                 int serverPort = int.TryParse(_configuration["ValheimServer:QueryPort"], out int port) ? port : 2457;
 
-                var query = new ServerQuery(serverHost, (ushort) serverPort);
-                ServerInfo info = await query.GetServerInfoAsync();
-                await _client.SetCustomStatusAsync($"Players online: {info.Players} / {info.MaxPlayers}");
-                await _logger.Log($"Updated player status: {info.Players}/{info.MaxPlayers}");
+                using var server = new GameServer("localhost:27015")
+                {
+                    SendTimeout = TimeSpan.FromSeconds(5.0d),
+                    ReceiveTimeout = TimeSpan.FromSeconds(5.0d)
+                };
+
+                var players = await server.GetPlayersAsync();
+
+                await _client.SetCustomStatusAsync($"Players online: {players.Count()} / 10");
+                await _logger.Log($"Updated player status: {players.Count()} / 10");
             }
             catch (Exception ex)
             {
                 await _logger.Log($"Error updating player count: {ex.Message}");
+                await _logger.Log($"Exception type: {ex.GetType().Name}");
+                await _logger.Log($"Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    await _logger.Log($"Inner exception: {ex.InnerException.Message}");
+                }
             }
         }
 
