@@ -41,21 +41,28 @@ namespace ValheimDiscordBot
 
             await _commands.AddModulesAsync(Assembly.GetExecutingAssembly(), _serviceProvider);
 
+            _client.Ready += Client_Ready;
+            _client.MessageReceived += HandleCommandAsync;
+
             await _client.LoginAsync(TokenType.Bot, discordToken);
             await _client.StartAsync();
 
             await _logger.Log("Discord bot started successfully");
+        }
 
+        private async Task Client_Ready()
+        {
+            await _logger.Log("Discord client is ready");
+
+            // Set initial player count now that client is ready
+            await SetPlayerCount();
+
+            // Start the timer after the first successful update
             int intervalSeconds = int.TryParse(_configuration["Bot:StatusUpdateIntervalSeconds"], out int interval) ? interval : 60;
             _playerStatusTimer = new System.Timers.Timer(intervalSeconds * 1000);
             _playerStatusTimer.Elapsed += PlayerStatusTimer_Elapsed;
             _playerStatusTimer.AutoReset = true;
             _playerStatusTimer.Enabled = true;
-
-            _client.MessageReceived += HandleCommandAsync;
-
-            // Set initial player count
-            await SetPlayerCount();
         }
 
         private async void PlayerStatusTimer_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
@@ -93,6 +100,7 @@ namespace ValheimDiscordBot
 
             if (_client != null)
             {
+                _client.Ready -= Client_Ready;
                 _client.MessageReceived -= HandleCommandAsync;
                 await _client.LogoutAsync();
                 await _client.StopAsync();
