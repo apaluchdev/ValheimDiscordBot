@@ -3,6 +3,7 @@ using Discord.Commands;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using SteamQuery;
+using System.Net;
 using System.Reflection;
 using ValheimDiscordBot.Interfaces;
 
@@ -76,7 +77,11 @@ namespace ValheimDiscordBot
                 string serverHost = _configuration["ValheimServer:Host"] ?? "apaluchdev.com";
                 int serverPort = int.TryParse(_configuration["ValheimServer:QueryPort"], out int port) ? port : 2457;
 
-                using var server = new GameServer("localhost:27015")
+                var address = serverHost + ":" + serverPort;
+
+                await _logger.Log($"Getting player count from {address}");
+
+                using var server = new GameServer(address)
                 {
                     SendTimeout = TimeSpan.FromSeconds(5.0d),
                     ReceiveTimeout = TimeSpan.FromSeconds(5.0d)
