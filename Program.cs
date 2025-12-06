@@ -17,6 +17,7 @@ namespace ValheimDiscordBot
             var configuration = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
                 .AddUserSecrets(Assembly.GetExecutingAssembly())
+                .AddEnvironmentVariables()
                 .Build();
 
             var serviceProvider = new ServiceCollection()
