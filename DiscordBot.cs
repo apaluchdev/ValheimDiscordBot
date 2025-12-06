@@ -86,7 +86,7 @@ namespace ValheimDiscordBot
 
                 var players = await server.GetPlayersAsync();
 
-                await _client.SetCustomStatusAsync($"Players online: {players.Count()} / 10");
+                await _client.SetCustomStatusAsync($"{_configuration["ValheimServer:Host"]} - Players: {players.Count()} / 10");
                 await _logger.Log($"Updated player status: {players.Count()} / 10");
             }
             catch (Exception ex)
